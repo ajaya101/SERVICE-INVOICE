@@ -1,6 +1,6 @@
 from flask import Blueprint, render_template, request, redirect, url_for
-from app.models.invoice import db, Invoice, Service
-from datetime import datetime
+from app.models.invoice import Invoice
+from app.database import db
 
 main = Blueprint('main', __name__)
 
@@ -9,57 +9,66 @@ def index():
     invoices = Invoice.query.all()
     return render_template('index.html', invoices=invoices)
 
-@main.route('/invoice/new', methods=['GET', 'POST'])
+@main.route('/new_invoice', methods=['GET', 'POST'])
 def new_invoice():
     if request.method == 'POST':
-        project = request.form['project']
-        client = request.form['client']
-        address = request.form['address']
-        email = request.form['email']
-        invoice_date = datetime.strptime(request.form['invoice_date'], '%Y-%m-%d')
-        due_date = datetime.strptime(request.form['due_date'], '%Y-%m-%d')
-        
-        invoice = Invoice(project=project, client=client, address=address, email=email, invoice_date=invoice_date, due_date=due_date)
+        project = request.form.get('project')
+        client = request.form.get('client')
+        address = request.form.get('address')
+        email = request.form.get('email')
+        invoice_date = request.form.get('invoice_date')
+        due_date = request.form.get('due_date')
+        descriptions = request.form.getlist('description[]')
+        amounts = request.form.getlist('amount[]')
+        total_amount = sum(float(amount) for amount in amounts)
+        remark = request.form.get('remark')
+        invoice_status = request.form.get('invoice_status')
+
+        invoice = Invoice(
+            project=project,
+            client=client,
+            address=address,
+            email=email,
+            invoice_date=invoice_date,
+            due_date=due_date,
+            descriptions=str(descriptions),
+            amounts=str(amounts),
+            total_amount=total_amount,
+            remark=remark,
+            invoice_status=invoice_status
+        )
+
         db.session.add(invoice)
         db.session.commit()
-        
-        services = request.form.getlist('description[]')
-        amounts = request.form.getlist('amount[]')
-        
-        for description, amount in zip(services, amounts):
-            service = Service(description=description, amount=float(amount), invoice_id=invoice.id)
-            db.session.add(service)
-        
-        db.session.commit()
-        
+
         return redirect(url_for('main.index'))
-    
+
     return render_template('invoice_form.html')
 
-@main.route('/invoice/<int:id>', methods=['GET', 'POST'])
-def view_invoice(id):
-    invoice = Invoice.query.get_or_404(id)
-    if request.method == 'POST':
-        invoice.project = request.form['project']
-        invoice.client = request.form['client']
-        invoice.address = request.form['address']
-        invoice.email = request.form['email']
-        invoice.invoice_date = datetime.strptime(request.form['invoice_date'], '%Y-%m-%d')
-        invoice.due_date = datetime.strptime(request.form['due_date'], '%Y-%m-%d')
-        
-        db.session.commit()
-        
-        Service.query.filter_by(invoice_id=invoice.id).delete()
-        
-        services = request.form.getlist('description[]')
-        amounts = request.form.getlist('amount[]')
-        
-        for description, amount in zip(services, amounts):
-            service = Service(description=description, amount=float(amount), invoice_id=invoice.id)
-            db.session.add(service)
-        
-        db.session.commit()
-        
-        return redirect(url_for('main.index'))
-    
+@main.route('/view_invoice/<int:invoice_id>')
+def view_invoice(invoice_id):
+    invoice = Invoice.query.get_or_404(invoice_id)
     return render_template('invoice_view.html', invoice=invoice)
+
+@main.route('/edit_invoice/<int:invoice_id>', methods=['GET', 'POST'])
+def edit_invoice(invoice_id):
+    invoice = Invoice.query.get_or_404(invoice_id)
+
+    if request.method == 'POST':
+        invoice.project = request.form.get('project')
+        invoice.client = request.form.get('client')
+        invoice.address = request.form.get('address')
+        invoice.email = request.form.get('email')
+        invoice.invoice_date = request.form.get('invoice_date')
+        invoice.due_date = request.form.get('due_date')
+        invoice.descriptions = str(request.form.getlist('description[]'))
+        invoice.amounts = str(request.form.getlist('amount[]'))
+        invoice.total_amount = sum(float(amount) for amount in request.form.getlist('amount[]'))
+        invoice.remark = request.form.get('remark')
+        invoice.invoice_status = request.form.get('invoice_status')
+
+        db.session.commit()
+
+        return redirect(url_for('main.view_invoice', invoice_id=invoice.id))
+
+    return render_template('invoice_form.html', invoice=invoice)

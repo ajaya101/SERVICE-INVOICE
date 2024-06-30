@@ -1,117 +1,58 @@
 {% extends 'layout.html' %} {% block content %}
-<h1>Invoice #{{ invoice.id }}</h1>
-<form method="POST">
-    <div class="form-group">
-        <label for="project">Project</label>
-        <input
-            type="text"
-            class="form-control"
-            id="project"
-            name="project"
-            value="{{ invoice.project }}"
-            required
-        />
-    </div>
-    <div class="form-group">
-        <label for="client">Client</label>
-        <input
-            type="text"
-            class="form-control"
-            id="client"
-            name="client"
-            value="{{ invoice.client }}"
-            required
-        />
-    </div>
-    <div class="form-group">
-        <label for="address">Address</label>
-        <input
-            type="text"
-            class="form-control"
-            id="address"
-            name="address"
-            value="{{ invoice.address }}"
-            required
-        />
-    </div>
-    <div class="form-group">
-        <label for="email">Email</label>
-        <input
-            type="email"
-            class="form-control"
-            id="email"
-            name="email"
-            value="{{ invoice.email }}"
-            required
-        />
-    </div>
-    <div class="form-group">
-        <label for="invoice_date">Invoice Date</label>
-        <input
-            type="date"
-            class="form-control"
-            id="invoice_date"
-            name="invoice_date"
-            value="{{ invoice.invoice_date }}"
-            required
-        />
-    </div>
-    <div class="form-group">
-        <label for="due_date">Due Date</label>
-        <input
-            type="date"
-            class="form-control"
-            id="due_date"
-            name="due_date"
-            value="{{ invoice.due_date }}"
-            required
-        />
-    </div>
-    <h3>Services</h3>
-    <div id="services">
-        {% for service in invoice.services %}
-        <div class="form-group row">
-            <div class="col">
-                <input
-                    type="text"
-                    class="form-control"
-                    name="description[]"
-                    value="{{ service.description }}"
-                    required
-                />
-            </div>
-            <div class="col">
-                <input
-                    type="number"
-                    class="form-control"
-                    name="amount[]"
-                    value="{{ service.amount }}"
-                    required
-                />
-            </div>
+<h1>Invoice Details</h1>
+<div class="form-group">
+    <label>Project:</label>
+    <p>{{ invoice.project }}</p>
+</div>
+<div class="form-group">
+    <label>Client:</label>
+    <p>{{ invoice.client }}</p>
+</div>
+<div class="form-group">
+    <label>Address:</label>
+    <p>{{ invoice.address }}</p>
+</div>
+<div class="form-group">
+    <label>Email:</label>
+    <p>{{ invoice.email }}</p>
+</div>
+<div class="form-group">
+    <label>Invoice Date:</label>
+    <p>{{ invoice.invoice_date }}</p>
+</div>
+<div class="form-group">
+    <label>Due Date:</label>
+    <p>{{ invoice.due_date }}</p>
+</div>
+<h3>Services</h3>
+<div>
+    {% for description, amount in zip(invoice.descriptions, invoice.amounts) %}
+    <div class="form-group row">
+        <div class="col-10">
+            <p>{{ description }}</p>
         </div>
-        {% endfor %}
+        <div class="col-2 text-right">
+            <p>{{ amount }}</p>
+        </div>
     </div>
-    <button type="button" class="btn btn-secondary" id="add_service">
-        Add Service
-    </button>
-    <button type="submit" class="btn btn-primary">Update Invoice</button>
-</form>
-<script>
-    document
-        .getElementById('add_service')
-        .addEventListener('click', function () {
-            const serviceDiv = document.createElement('div');
-            serviceDiv.className = 'form-group row';
-            serviceDiv.innerHTML = `
-        <div class="col">
-            <input type="text" class="form-control" name="description[]" placeholder="Service Description" required>
-        </div>
-        <div class="col">
-            <input type="number" class="form-control" name="amount[]" placeholder="Amount" required>
-        </div>
-    `;
-            document.getElementById('services').appendChild(serviceDiv);
-        });
-</script>
+    {% endfor %}
+</div>
+<div class="form-group">
+    <label>Remark:</label>
+    <p>{{ invoice.remark }}</p>
+</div>
+<div class="form-group">
+    <label>Invoice Status:</label>
+    <p>{{ invoice.invoice_status }}</p>
+</div>
+<div class="form-group">
+    <label>Total Amount:</label>
+    <p>{{ invoice.total_amount }}</p>
+</div>
+<a
+    href="{{ url_for('main.edit_invoice', invoice_id=invoice.id) }}"
+    class="btn btn-primary"
+    >Edit</a
+>
+<a href="{{ url_for('main.index') }}" class="btn btn-secondary">Back</a>
 {% endblock %}
